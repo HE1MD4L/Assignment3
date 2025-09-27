@@ -1,39 +1,57 @@
-function checkBalance(balance, amount) {
-  return new Promise((resolve, reject) => {
-    console.log("Checking balance...");
-    if (balance >= amount) {
-      resolve(balance);
-    } else {
-      reject("Error: Insufficient funds");
+const readline = require("readline");
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+let balance = 0; 
+
+function askAction() {
+  console.log(`\nYour current balance: ${balance}`);
+  rl.question("Do you want to (deposit / withdraw) or type 'exit' to quit: ", (action) => {
+    action = action.toLowerCase();
+
+    if (action === "exit") {
+      console.log("Exiting... Goodbye!");
+      rl.close();
+      return;
     }
-  });
-}
 
-function deductAmount(balance, amount) {
-  return new Promise((resolve, reject) => {
-    console.log("Deducting amount...");
-    if (amount > 0) {
-      resolve(balance - amount);
-    } else {
-      reject("Error: Invalid amount");
+    if (action !== "deposit" && action !== "withdraw") {
+      console.log("Invalid choice. Try again.");
+      return askAction();
     }
+
+    rl.question(`Enter amount to ${action}: `, (answer) => {
+      let amount = parseFloat(answer);
+
+      if (isNaN(amount) || amount <= 0) {
+        console.log("Invalid amount. Try again.");
+        return askAction();
+      }
+
+   
+      rl.question(`Are you sure you want to ${action} ${amount}? (yes/no): `, (confirm) => {
+        if (confirm.toLowerCase() === "yes") {
+          if (action === "withdraw") {
+            if (amount > balance) {
+              console.log("Insufficient funds.");
+            } else {
+              balance -= amount;
+              console.log(`Withdrawal successful. New balance: ${balance}`);
+            }
+          } else if (action === "deposit") {
+            balance += amount;
+            console.log(`Deposit successful. New balance: ${balance}`);
+          }
+        } else {
+          console.log("Transaction cancelled.");
+        }
+        askAction();
+      });
+    });
   });
 }
 
-function confirmTransaction(newBalance) {
-  return new Promise((resolve) => {
-    console.log("Confirming transaction...");
-    resolve(`Transaction complete. New balance: ${newBalance}`);
-  });
-}
-function transferMoney(balance, amount) {
-  checkBalance(balance, amount)
-    .then(bal => deductAmount(bal, amount))
-    .then(newBal => confirmTransaction(newBal))
-    .then(result => console.log(result))
-    .catch(err => console.error(err));
-}
-
-
-transferMoney(299, 300);
-transferMoney(1000, 300);
+askAction();
